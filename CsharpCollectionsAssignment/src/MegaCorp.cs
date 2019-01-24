@@ -7,6 +7,13 @@ namespace CsharpCollectionsAssignment
 {
     public class MegaCorp : IHierarchy<ICapitalist, FatCat>
     {
+        private Dictionary<FatCat, ISet<ICapitalist>> hierarchy;
+
+        public MegaCorp()
+        {
+            hierarchy = new Dictionary<FatCat, ISet<ICapitalist>>();
+        }
+
         /**
          * Adds a given element to the hierarchy.
          * <p>
@@ -27,7 +34,39 @@ namespace CsharpCollectionsAssignment
          */
         public bool Add(ICapitalist element)
         {
-            throw new NotImplementedException();
+            if (element == null)
+            {
+                return false;
+            }
+
+            bool elementAdded = false;
+
+            if (element.HasParent())
+            {
+                FatCat parent = element.GetParent();
+
+                if (GetParents().Contains(parent))
+                {
+                    if (!hierarchy[parent].Contains(element))
+                    {
+                        hierarchy[parent].Add(element);
+                        elementAdded = true;
+                    }
+                }
+                else if (Add(parent))
+                {
+                    hierarchy[parent].Add(element);
+                    elementAdded = true;
+                }
+            }
+
+            if (element is FatCat && !GetParents().Contains((FatCat)element))
+            {
+                hierarchy.Add((FatCat)element, new HashSet<ICapitalist>());
+                elementAdded = true;
+            }
+
+            return elementAdded;
         }
 
         /**
@@ -36,7 +75,29 @@ namespace CsharpCollectionsAssignment
          */
         public bool Has(ICapitalist element)
         {
-            throw new NotImplementedException();
+            bool has = false;
+
+            foreach (FatCat fatCat in hierarchy.Keys)
+            {
+                if (element.Equals(fatCat))
+                {
+                    has = true;
+                    break;
+                }
+                else
+                {
+                    foreach (ICapitalist child in hierarchy[fatCat])
+                    {
+                        if (element.Equals(child))
+                        {
+                            has = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return has;
         }
 
         /**
@@ -45,7 +106,16 @@ namespace CsharpCollectionsAssignment
          */
         public ISet<ICapitalist> GetElements()
         {
-            throw new NotImplementedException();
+            var elements = new HashSet<ICapitalist>(hierarchy.Keys);
+            foreach (FatCat parent in hierarchy.Keys)
+            {
+                foreach (ICapitalist child in hierarchy[parent])
+                {
+                    elements.Add(child);
+                }
+            }
+
+            return elements;
         }
 
         /**
@@ -54,7 +124,7 @@ namespace CsharpCollectionsAssignment
          */
         public ISet<FatCat> GetParents()
         {
-            throw new NotImplementedException();
+            return new HashSet<FatCat>(hierarchy.Keys);
         }
 
         /**
@@ -65,7 +135,7 @@ namespace CsharpCollectionsAssignment
          */
         public ISet<ICapitalist> GetChildren(FatCat parent)
         {
-            throw new NotImplementedException();
+            return hierarchy.ContainsKey(parent) ? new HashSet<ICapitalist>(hierarchy[parent]) : new HashSet<ICapitalist>();
         }
 
         /**
@@ -75,7 +145,13 @@ namespace CsharpCollectionsAssignment
          */
         public IDictionary<FatCat, ISet<ICapitalist>> GetHierarchy()
         {
-            throw new NotImplementedException();
+            IDictionary<FatCat, ISet<ICapitalist>> hierarchyCopy = new Dictionary<FatCat, ISet<ICapitalist>>();
+            foreach(FatCat parent in hierarchy.Keys)
+            {
+                hierarchyCopy.Add(parent, GetChildren(parent));
+            }
+
+            return hierarchyCopy;
         }
 
         /**
@@ -86,7 +162,23 @@ namespace CsharpCollectionsAssignment
          */
         public IList<FatCat> GetParentChain(ICapitalist element)
         {
-            throw new NotImplementedException();
+            var parents = new List<FatCat>();
+
+            if (element != null && element.HasParent() && GetParents().Contains(element.GetParent()))
+            {
+                parents.Add(element.GetParent());
+
+                while (parents[parents.Count - 1].HasParent())
+                {
+                    var parent = parents[parents.Count - 1].GetParent();
+                    if (GetParents().Contains(parent))
+                    {
+                        parents.Add(parent);
+                    }
+                }
+            }
+
+            return parents;
         }
     }
 }
